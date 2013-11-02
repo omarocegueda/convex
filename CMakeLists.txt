@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 2.6)
+project(procimlib)
+file(GLOB SRC_CPP "src/*.cpp")
+file(GLOB INCLUDES "include/*.h")
+
+include_directories(.)
+include_directories(${CLAPACK_INCLUDE_DIR})
+link_directories(${CLAPACK_LIBRARY_DIR})
+add_library(procimlib ${SRC_CPP} ${INCLUDES})
+target_link_libraries(procimlib NNLibrary)

@@ -1,0 +1,706 @@
+%\newcommand{\reviewmode}{}
+
+
+\ifdefined\reviewmode
+\documentclass[12pt,draftcls, onecolumn, letterpaper,compsoc]{IEEEtran}
+    \def \doublefigureproportion {0.25}
+    \def \singlefigureproportion {0.49}
+    \def \annotatedfacesize {0.20}
+    \def \firstfiguresize {0.2535}
+\else
+    \documentclass[10pt,journal,onecolumn,letterpaper,compsoc]{IEEEtran}
+    \def \doublefigureproportion {0.5}
+    \def \singlefigureproportion {0.99}
+    \def \annotatedfacesize {0.50}
+    \def \firstfiguresize {0.50711822}
+\fi
+\usepackage{multirow}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{subfig}
+\usepackage{color}
+
+\newtheorem{definition}{\textbf{Definici\'{o}n}}
+\newtheorem{proposition}{\textbf{Proposici\'{o}n}}
+\newtheorem{theorem}{\textbf{Teorema}}
+\newtheorem{example}{\textbf{Ejemplo}}
+\newtheorem{demo}{\textbf{Demostraci\'{o}n}}
+
+\ifCLASSOPTIONcompsoc
+\else
+  \usepackage{cite}
+\fi
+
+\usepackage{mdwmath}
+\usepackage{mdwtab}
+
+
+
+\begin{document}
+\title{Optimizaci\'{o}n de funciones convexas}
+
+\author{Omar Ocegueda}
+\maketitle
+\section{Introducci\'{o}n}
+Este trabajo es un resumen del cap\'{i}tulo 2 del libro ``Optimization for Machine Learning'' de Sra, Nowozin y Wright, con algunas extensiones para hacerlo mas autocontenido. El objetivo es describir los problemas de optimizaci\'{o}n que surgen de modelos que promueven el que las soluciones sean ``ralas'', es decir, la soluci\'{o}n del modelo se codifica como un vector en $\mathbb{R}^{n}$ y se busca que dicha soluci\'{o}n tenga la menor cantidad posible de entradas distintas de cero. Estos modelos se conocen en la literatura como ``m\'{e}todos ralos''. Estamos interesados en problemas de optimizaci\'{o}n de la forma:
+\begin{equation}\label{eq:generalProblem}
+    \min_{\omega \in \mathbb{R}^{p}} f(u) + \lambda\Omega(w)
+\end{equation}
+donde $f$ es una funci\'{o}n convexa y diferenciable, $\Omega$ es una norma que promueve el que las soluciones sean ralas (es decir, vectores ralos tienen una norma $\Omega$ menor que vectores densos) y $\lambda$ es un par\'{a}metro que controla el peso que se le da a la norma $\Omega$. Una gran cantidad de m\'{e}todos ralos se pueden formular como la soluci\'{o}n de un problema de optimizaci\'{o}n de la forma (\ref{eq:generalProblem}). Normalmente la norma $\Omega$ no es Euclideana y no es diferenciable. Por ejemplo, en un problema de regresi\'{o}n lineal estamos interesados en predecir una salida $y\in \mathbb{R}$ a partir de vectores de entrada $x \in \mathbb{R}^{p}$ mediante una funci\'{o}n linear de la forma $y=\omega^{T}x$. Para esto contamos con un conjunto de entrenamiento $\left\lbrace (x^{(i)}, y^{(i)})\right\rbrace, 0\leq i \leq n$ y buscamos un modelo $\omega\in \mathbb{R}^{p}$ que minimiza el {\it riesgo emp\'{i}rico} asociado al conjunto de entrenamiento definido como:
+\begin{equation}
+    f(\omega) = \sum_{i=1}^{n} \ell(y^{(i)}, \omega^{T}x^{(i)})
+\end{equation}
+donde $\ell$ es una funci\'{o}n que penaliza la diferencia entre $y^{(i)}$ y $x^{(i)}$, por ejemplo la funci\'{o}n de costo cuadr\'{a}tico $\ell (y, \hat{y}) = \frac{1}{2}(y - \hat{y})^2$. Una elecci\'{o}n de $\Omega$ en el problema \ref{eq:generalProblem} que promueve el que la soluci\'{o}n $\omega^{*}$ sea rala es la norma $L_1$: $\Omega(\omega)=\sum_{i=1}^{p}=|\omega_i|$.\\
+
+En algunas situaciones es conveniente promover el que grupos completos de variables sean incluidos o descartados del modelo, en lugar de incluir o descartar variables individuales. Una manera de lograr este efecto es usando una norma de la forma
+\begin{equation}\label{eq:L1L2_norm}
+    \Omega(\omega) = \sum_{g\in\mathcal{G}}||\omega_g||_2
+\end{equation}
+donde la partici\'{o}n $\mathcal{G}$ de $\left\lbrace 1,2,...,p\right\rbrace$ define los grupos de variables. Notemos que la norma $L_2$ aplicada a cada grupo de variables no promueve raleza dentro de cada grupo pero esta norma se puede ver como la norma $L_1$ aplicada al vector $\left(||\omega_1||_2, ||\omega_2||_2, ..., ||\omega_p||_2\right)$, por lo que esta norma promueve el que dicho vector sea ralo, es decir, el que cada grupo sea incluido o descartado en el modelo. La norma de la ecuaci\'{o}n (\ref{eq:L1L2_norm}) se conoce como norma $\ell_1/\ell_2$. Notemos tambi\'{e}n que si la partici\'{o}n $\mathcal{G}$ es el conjunto de elementos individuales $\left\lbrace k\right\rbrace, k=1,...,p$, entonces la norma $\ell_1/\ell_2$ es precisamente la norma $\ell_1$. En general esta norma se puede extender directamente a $\ell_1/\ell_p$ con $p>1$, siendo $p=1, p=\infty$ las elecciones mas populares.
+
+\section{Elementos de an\'{a}lisis convexo}
+Muchos problemas de estimaci\'{o}n se pueden plantear como la minimizaci\'{o}n de un potencial $F:\mathbb{R}^{p} \rightarrow \mathbb{R}$. Cuando $F$ es una funci\'{o}n convexa es posible encontrar un minimizador global de $F$ y en consecuencia, la soluci\'{o}n \'{o}ptima del problema en cuesti\'{o}n. Si la soluci\'{o}n encontrada no es satisfactoria podemos estar seguros de que el problema est\'{a} en el modelo y no en el m\'{e}todo de optimizaci\'{o}n que utilizamos.\\
+
+\subsection{Subgradientes}
+\begin{definition}[Conjunto convexo]
+decimos que un conjunto $\mathcal{U} \subset \mathbb{R}^{p}$ es {\it convexo} si $\forall x,y \in \mathcal{U}$ y $\lambda \in [0,1]$, $\lambda x + (1-\lambda)y \in \mathcal{U}$.\\
+\end{definition}
+
+\begin{definition}[Epigr\'{a}fica]
+sea $\mathcal{U}\subset \mathbb{R}^{p}$ y $f:\mathcal{U} \rightarrow (-\infty, \infty]$ una funci\'{o}n. Definimos la {\it epigr\'{a}fica} de $f$ como:
+    \begin{displaymath}
+        epi(f) = \left\lbrace (x, \mu): x\in \mathcal{U}, f(x)\leq \mu \right\rbrace \subset \mathbb{R}^{p+1}.\\
+    \end{displaymath}
+\end{definition}
+
+\begin{definition}[Funci\'{o}n convexa]
+sea $\mathcal{U}\subset \mathbb{R}^{p}$ y $f:\mathcal{U} \rightarrow (-\infty, \infty]$ una funci\'{o}n. Decimos que $f$ es convexa si su epigr\'{a}fica $epi(f)$ es un conjunto convexo.\\
+\end{definition}
+
+Si el pontencial convexo a minimizar es diferenciable, es posible utilizar m\'{e}todos de optimizaci\'{o}n basados en descenso de gradiente para encontrar un minimizador global. Sin embargo, muchos de los potenciales m\'{a}s \'{u}tiles y con propiedades m\'{a}s interesantes no son diferenciables. Quisi\'{e}ramos extender el concepto de gradiente a funciones que no son diferenciables para luego utilizar esta extensi\'{o}n como punto de partida para generalizar los m\'{e}todos de optimizaci\'{o}n basados en el c\'{a}lculo del gradiente de la funci\'{o}n objetivo. La propiedad del gradiente que nos va a interesar es la siguiente:\\
+
+\begin{proposition}
+    Sea $f: \mathbb{R}^{p} \rightarrow (-\infty, \infty]$ una funci\'{o}n convexa diferenciable en $x_0 \in \mathbb{R}^{p}$. Entonces la funci\'{o}n $g(x)=f(x_0) + \nabla f(x_0)^{T}(x-x_0)$ es un subestimador global de $f$ en $\mathbb{R}^{p}$. Es decir, $g(x)\leq f(x) \forall x\in \mathbb{R}^{p}$ (la linea tangente a $f$ en $x_0$ queda por debajo de $f$).\\
+\end{proposition}
+La observaci\'{o}n importante es que cuando $f$ no es diferenciable, existen muchas funciones afines $g$ que son subestimadores globales de $f$. En ese caso, vamos a considerar todas las funciones afines que cumplen dicha condici\'{o}n:\\
+
+\begin{definition}[Subdiferencial]
+    sea $f:\mathbb{R}^{p}$ una funci\'{o}n convexa. El {\it subdiferencial} de $f$ en $x_0$ se define como el conjunto de vectores
+    \begin{equation}
+        \partial f(x_0) = \left\lbrace b \in \mathbb{R}^{p} : f(z) \geq f(x_0) + <b, z-x_0> \forall z\in \mathbb{R}^{p} \right\rbrace.\\
+    \end{equation}
+\end{definition}
+Los elementos de $\partial f(x_0)$ son los {\it subgradientes} de $f$ en $x_0$. Notemos que si $0 \in \partial f(x_0)$ entonces por definici\'{o}n se satisface $f(z) \geq f(x_0) \forall z\in \mathbb{R}^{p}$, es decir, $x_0$ es un m\'{i}nimo \textbf{global} de $f$.\\
+
+\begin{proposition}[Regla de Fermat]
+sea $f:\mathbb{R}^{p} \rightarrow (\infty, \infty]$ una funci\'{o}n convexa. Entonces $x\in \mathbb{R}^{p}$ es un m\'{i}nimo global de $f$ si y s\'{o}lo si $0 \in \partial f(x)$.\\
+\end{proposition}
+
+Si $f$ es diferenciable en $x_0$, el subdiferencial de $f$ contiene un \'{u}nico elemento $\partial f(x_0) = \left\lbrace \nabla f(x_0)\right\rbrace$, $x_0$ es un m\'{i}nimo global de la funci\'{o}n convexa $f$ si y s\'{o}lo si $\nabla f(x_0)=0$. As\'{i} que en este caso la regla de Fermat se reduce a la condici\'{o}n cl\'{a}sica de optimalidad de primer orden.\\
+
+\begin{example}
+    consideremos el siguiente problema:
+    \begin{displaymath}
+        \min_{\omega\in \mathbb{R}} \frac{1}{2}(\omega - x)^{2} + \lambda|\omega|.\\
+    \end{displaymath}
+    Como la funci\'{o}n valor absluto es diferenciable en todas partes excepto en $0$, el subdiferencial del valor absoluto $\partial |\cdot|$ est\'{a} dado por
+    \begin{displaymath}
+        \partial |\omega| = \left\lbrace\begin{array}{ll}
+            \left\lbrace-1\right\rbrace, & \omega < 0\\
+            \left\lbrace 1\right\rbrace, & \omega > 0\\
+            \left[-1, 1\right], & \omega = 0\\
+        \end{array}\right.
+    \end{displaymath}
+    Como la funci\'{o}n $f(\omega)=\frac{1}{2}(\omega - x)^{2}$ es diferenciable y $\frac{\partial f}{\partial \omega}(\omega) = \omega - x$, el subdiferencial de la funci\'{o}n $F(\omega) = f(\omega) + \lambda|\omega|$ es
+    \begin{displaymath}
+        \partial F(\omega) = \left\lbrace\begin{array}{ll}
+            \left\lbrace\omega-x-\lambda\right\rbrace, & \omega < 0\\
+            \left\lbrace\omega-x+ \lambda\right\rbrace, & \omega > 0\\
+            \left[\omega-x-\lambda, \omega-x+\lambda\right], & \omega = 0\\
+        \end{array}\right.
+    \end{displaymath}
+    Nuestro objetivo es encontrar $\omega$ tal que $0\in \partial F(\omega)$. En el primer caso, nos gustar\'{i}a elegir $\omega = x+\lambda$, pero este valor ser\'{a} el subdiferencial de $F(\omega)$ si y s\'{o}lo si $x+\lambda<0$. En el segundo caso quisi\'{e}ramos elegir $\omega = x-\lambda$ siempre y cuando $x-\lambda>0$, y en el tercer caso $\omega=0$, siempre que $0\in[-x-\lambda,-x+\lambda]$:
+    \begin{displaymath}
+        \arg\min_{\omega \in \mathbb{R}} F(\omega) = \left\lbrace\begin{array}{ll}
+            x+\lambda, & x < -\lambda\\
+            x-\lambda & x > \lambda\\
+            0 & x\in\left[ -\lambda, \lambda\right]\\
+        \end{array}\right. = \left\lbrace\begin{array}{ll}
+            x-sign(x)\lambda & |x|>\lambda\\
+            0 & |x|\leq \lambda\\
+        \end{array}\right.
+    \end{displaymath}
+    Este operador se conoce como ``soft-thresholding''.
+\end{example}
+\subsection{Normas duales y condiciones de optimalidad}
+
+\begin{definition}[Norma dual]
+    Sea $\Omega:\mathbb{R}^{p} \rightarrow [0, \infty]$ una norma. Definimos la norma dual asociada a $\Omega^{*}$ como:
+    \begin{displaymath}
+        \Omega^{*}(z) = \max_{\omega \in {\mathbb{R}^{p}}: \Omega(\omega)\leq 1} <z,w>
+    \end{displaymath}
+\end{definition}
+
+La norma dual tiene las siguientes propiedades:
+\begin{theorem}\label{thm:normProperties}
+    sea $\Omega:\mathbb{R}^{p} \rightarrow [0, \infty]$ una norma y $\Omega^{*}$ su norma dual. Entonces:\\
+    \begin{enumerate}
+        \item{$(\Omega^{*})^{*} = \Omega$}
+        \item{Si $\Omega(\cdot) = ||\cdot||_p$, $p\in [1, \infty]$, entonces $\Omega^{*}(\cdot) = ||\cdot||_{q}$, donde $1=\frac{1}{p} + \frac{1}{q}$}
+        \item{$\partial \Omega(\omega) = \left\lbrace\begin{array}{ll}
+                \left\lbrace z\in \mathbb{R}^{p}: \Omega^{*}(z)\leq 1\right\rbrace,  &   \omega=0\\
+                \left\lbrace z\in \mathbb{R}^{p}: \Omega^{*}(z)\leq 1, <z,\omega> = \Omega(w)\right\rbrace,  &   \omega\neq0\\
+            \end{array}\right.
+        $}
+    \end{enumerate}
+\end{theorem}
+\begin{proof}
+    Solamente demostrar\'{e} la tercera propiedad. Por definici\'{o}n, tenemos:
+    \begin{displaymath}
+        \partial\Omega(\omega) = \left\lbrace z : \Omega(y) \geq \Omega(\omega) + <z,y-\omega> \forall y\in\mathbb{R}^{p}\right\rbrace,
+    \end{displaymath}
+    si $\omega=0$, esto es igual a
+    \begin{displaymath}
+        \left\lbrace z : \Omega(y) \geq  <z,y> \forall y\in\mathbb{R}^{p}\right\rbrace
+    \end{displaymath}
+    \begin{displaymath}
+        =\left\lbrace z : 0\geq \sup_{y\in \mathbb{R}^{p}}<z,y>-\Omega(y) \right\rbrace,
+    \end{displaymath}
+    si $y=0$ entonces se satisface la desigualdad y por lo tanto $y=0$ est\'{a} en el subdiferencial.  Por otro lado, si $y\neq 0$ entonces, dividiendo por $\Omega(y)$:
+    \begin{displaymath}
+        =\left\lbrace z : 0 \geq  \sup_{u\in \mathbb{R}^{p}:\Omega(u)=1}<z,u> -1 \right\rbrace
+    \end{displaymath}
+    \begin{displaymath}
+        =\left\lbrace z : \Omega^{*}(z) \leq 1 \right\rbrace.
+    \end{displaymath}
+    Por otro lado, si $\omega\neq 0$, entonces
+    \begin{displaymath}
+        \partial\Omega(\omega) = \left\lbrace z : \Omega(y) \geq \Omega(\omega) + <z,y-\omega> \forall y\in\mathbb{R}^{p}\right\rbrace,
+    \end{displaymath}
+    \begin{displaymath}
+        = \left\lbrace z : \Omega(y) -<z, y> \geq \Omega(\omega) - <z,\omega> \forall y\in\mathbb{R}^{p}\right\rbrace,
+    \end{displaymath}
+    \begin{displaymath}
+        = \left\lbrace z : \inf_{y\in\mathbb{R}^{p}} \Omega(y) -<z, y> \geq \Omega(\omega) - <z,\omega> \right\rbrace,
+    \end{displaymath}
+    pero este \'{i}nfimo solo puede estar acotado por abajo si $\Omega(y) -<z, y> \geq 0$ (de otro modo podemos hacer que esta diferencia decrezca hacia $-\infty$), y en ese caso,
+    el \'{i}nfimo se alcanza en $y=0$, luego $\Omega(\omega) - <z,\omega>=0$ (porque esta diferencia debe ser no negativa y acota por abajo a cero, tiene que ser cero). Por lo tanto:\\
+    \begin{displaymath}
+        \partial\Omega(\omega) = \left\lbrace z : \Omega(\omega) = <z,\omega>, \inf_{y\in\mathbb{R}^{p}} \Omega(y) -<z, y> \geq 0 \forall y\in\mathbb{R}^{p}\right\rbrace,
+    \end{displaymath}
+    \begin{displaymath}
+        = \left\lbrace z : \Omega(\omega) = <z,\omega>, \sup_{y\in\mathbb{R}^{p}} <z, y>  \leq \Omega(y) \forall y\in\mathbb{R}^{p}\right\rbrace,
+    \end{displaymath}
+    \begin{displaymath}
+        = \left\lbrace z : \Omega(\omega) = <z,\omega>, \Omega^{*}(z) \leq 1\right\rbrace.
+    \end{displaymath}
+\end{proof}
+
+\begin{example}
+    consideremos el siguiente problema de optimizaci\'{o}n:\\
+    \begin{displaymath}
+        \min_{\omega\in \mathbb{R}^{p}} \frac{1}{2}||X\omega - y||_{2}^{2} + \lambda ||w||_1,\\
+    \end{displaymath}
+    este es un problema de la forma (\ref{eq:generalProblem}), ya que $f(\omega)=\frac{1}{2}||X\omega - y||_{2}^{2}$ es diferenciable y $\Omega(\omega)=||\omega||_1$ es una norma. La regla de Fermat nos dice que $\omega$ es un m\'{i}nimo global si y s\'{o}lo si $0\in \nabla f(\omega) + \lambda \partial\Omega(\omega)$, si y s\'{o}lo si $-\frac{1}{\lambda}\nabla f(\omega) \in \partial \Omega(\omega)$ y el teorema anterior nos dice precisamente qui\'{e}n es $\partial\Omega(\omega)$ y tambi\'{e}n nos dice que $\Omega^{*}(\cdot)$ es precisamente $||\cdot||_{\infty}$, ya que $\Omega(\cdot) = ||\cdot||_1$. Luego, el vector nulo ($\omega=0$) es m\'{i}nimo global si y s\'{o}lo si $-\frac{1}{\lambda}\nabla f(\omega) \in \left\lbrace z: ||z||_{\infty} \leq 1\right\rbrace$, es decir, $0$ es m\'{i}nimo global si y s\'{o}lo si $||\nabla f(0)||_{\infty}\leq \lambda$. Finalmente, si $\omega\neq 0$, entonces $\omega$ es un m\'{i}nimo global si y s\'{o}lo si $<\frac{1}{\lambda}\nabla f(\omega),\omega>=||\omega||_1$ y $\Omega^{*}(-\frac{1}{\lambda}\nabla f(\omega))\leq 1$. Entonces la segunda condici\'{o}n de optimalidad es $||\nabla f(\omega)||_{\infty}\leq \lambda$. El gradiente de $f$ es $\nabla f(\omega) =X^{T}(X\omega - y)$, la norma infinito de este gradiente debe ser menor o igual que $\lambda$, entonces $|X_{j}^{T}(X\omega - y)|\leq \lambda$ para todo $j=1,2,...,p$, donde $X_j$ es la $j$-\'{e}sima columna de $X$. Notemos que esta condici\'{o}n junto con la otra condici\'{o}n optimalidad $-\frac{1}{\lambda}\nabla f(\omega)^{T}\omega = ||\omega||_1$, implica que $\omega_j X_{j}^{T}(X\omega - y) = \lambda|\omega_j|$ para todo $j=1,2,...,p$ (es decir, $|X_{j}^{T}(X\omega - y)| = \lambda$, porque si alguno de los componentes es menor que $\lambda$, la cota superior $\lambda ||w||_1$ no se alcanzar\'{i}a), esta igualdad se cumple para $\omega_j = 0$, mientras que para $\omega\neq 0$, podemos dividir por $\omega_0$ y tenemos que la igualdad se cumple si $X_{j}^{T}(X\omega - y) = \lambda sign(\omega_j)$. Por lo tanto, las condiciones necesarias y suficientes para que $\omega$ sea un \'{o}ptimo global son
+    \begin{displaymath}
+        \forall j=1,2,...,p \left\lbrace
+        \begin{array}{ll}
+            |X_j^{T}(X\omega - y)| \leq \lambda & \omega_j = 0\\
+            X_j^{T}(X\omega - y) = \lambda sign(\omega_j) & \omega_j \neq 0\\
+        \end{array}\right.
+    \end{displaymath}
+
+
+\end{example}
+
+\subsection{Conjugada de Fenchel y gaps de dualidad}
+
+Una propiedad interesante de las funciones convexas es que si $h$ es una funci\'{o}n af\'{i}n que subestima globalmente a $f$, entonces la epigr\'{a}fica de $f$ est\'{a} completamente contenida en la epigr\'{a}fica de $h$. Entonces tenemos el siguiente teorema:\\
+
+\begin{theorem}\label{th:epi_intersection}
+    sea $f:\mathbb{R}^{p}\rightarrow (-\infty, \infty]$ una funci\'{o}n convexa. Sea $F^{*}$ el conjunto de todas las funciones afines que subestiman globalmente a $f$. Entonces la epigr\'{a}fica de $f$ es la intersecci\'{o}n de las epigr\'{a}ficas de todas las funciones afines en $F^{*}$:
+    \begin{equation}
+        epi(f) = \bigcap_{h\in F^{*}} epi(h)\\
+    \end{equation}
+\end{theorem}
+
+El teorema \ref{th:epi_intersection} nos dice que hay dos maneras de ver a $f$. Podemos pensar en $f$ como el conjunto de puntos $(x, f(x))$ (la {\it gr\'{a}fica de $f$}) o podemos pensar en $f$ como un conjunto de planos que {\it envuelven}  su epigr\'{a}fica. Veamos m\'{a}s precisamente qui\'{e}n es $F^{*}$. Una funci\'{o}n af\'{i}n $h:\mathbb{R}^{p} \rightarrow \mathbb{R}$ est\'{a} caracterizada por el par $(b, \mu)$, donde $b\in \mathbb{R}^{p}$ y $\mu \in \mathbb{R}$, la funci\'{o}n af\'{i}n se puede escribir como $h(x) = <x, b> - \mu$. Entonces:\\
+
+\begin{displaymath}
+    F^{*} = \left\lbrace (b, \mu) \in \mathbb{R}^{p+1} : f(x) \geq <b, x> -\mu, \forall x \in \mathbb{R}^{p}\right\rbrace
+\end{displaymath}
+\begin{displaymath}
+    = \left\lbrace (b, \mu) \in \mathbb{R}^{p+1} : \mu \geq <b, x> - f(x), \forall x \in \mathbb{R}^{p}\right\rbrace
+\end{displaymath}
+\begin{displaymath}
+    = \left\lbrace (b, \mu) \in \mathbb{R}^{p+1} : \mu \geq \sup_{x\in\mathbb{R}^{p}} <b, x> - f(x) \right\rbrace,
+\end{displaymath}
+y este supremo solamente depende de $b$. Si definimos la funci\'{o}n $f^{*}:\mathbb{R}^{p} \rightarrow (-\infty, \infty]$ por $f^{*}(b) = \sup_{x\in\mathbb{R}^{p}}<b, x> - f(x)$ entonces\\
+\begin{displaymath}
+    F^{*} = \left\lbrace (b, \mu) \in \mathbb{R}^{p+1} : \mu \geq f^{*}(b) \right\rbrace = epi(f^{*})\\
+\end{displaymath}
+
+\begin{definition}[Conjugada convexa]
+    sea $f:\mathbb{R}^{p} \rightarrow (-\infty, \infty]$ una funci\'{o}n convexa. La funci\'{o}n {\it conjugada convexa} de $f$ se define como la funci\'{o}n $f^{*}:\mathbb{R}^{p}\rightarrow (-\infty, \infty]$
+    \begin{equation}
+        f^{*}(b) = \sup_{x\in\mathbb{R}^{p}}<b, x> - f(x).\\
+    \end{equation}
+\end{definition}
+
+Intuitivamente, $f^{*}(b)$ (la conjugada de $f$ evaluada en $b$) mide la m\'{a}xima diferencia entre $f$ y la funci\'{o}n lineal definida por $b$ (un plano que pasa por el origen). Una forma intuitiva de pensar en la conjugada convexa es que la constante $f^{*}(b)$ es la m\'{i}nima cantidad que debemos ``bajar'' el plano para que quede completamente por debajo de la gr\'{a}fica de $f$. Es decir $<b, x> - f^{*}(b) \leq f(x),  \forall x\in \mathbb{R}^{p}$, y esto se cumple para todo vector $b\in \mathbb{R}^{p}$. Esta propiedad se conoce como ``desigualdad de Fenchel''.\\
+
+\begin{theorem}[Desigualdad de Fenchel]
+    sea $f:\mathbb{R}^{p} \rightarrow (-\infty, \infty]$ una funci\'{o}n convexa con conjugada convexa $f^{*}$. Entonces
+    \begin{equation}
+        <x, b> \leq f^{*}(b) + f(x) \forall x,b\in \mathbb{R}^{p}\\
+    \end{equation}
+\end{theorem}
+
+La conjugada convexa est\'{a} relacionada con la norma dual:
+\begin{definition}[Funci\'{o}n indicadora]
+    sea $C\subset \mathbb{R}^{p}$ un conjunto. Definimos la funci\'{o}n indicadora de $C$ como la funci\'{o}n $\iota_{C}:\mathbb{R}^{p} \rightarrow [0, \infty]$ dada por
+    \begin{displaymath}
+        \iota_{C}(\omega) = \left\lbrace\begin{array}{ll}
+            0   &   \omega \in C\\
+            \infty   &   \omega \notin C\\
+        \end{array}\right.\\
+    \end{displaymath}
+\end{definition}
+
+\begin{theorem}[Propiedades de la funci\'{o}n indicadora]
+    sea $\iota_{\Omega}$ la funci\'{o}n indicadora del conjunto $C =\left\lbrace \omega\in \mathbb{R}^{p} : \Omega(\omega)\leq 1\right\rbrace$ entonces:
+    \begin{enumerate}
+        \item{$\iota_{\Omega}$ es una funci\'{o}n convexa.}
+        \item{La conjugada convexa $\iota^{*}_{\Omega}$ es la norma dual $\Omega^{*}$}
+    \end{enumerate}
+\end{theorem}
+
+\begin{proposition}[Dualidad del problema (\ref{eq:generalProblem})]
+    Si $f^{*}$ y $\Omega^{*}$ son respectivamente la conjugada convexa de $f$ y la norma dual de $\Omega$, entonces
+    \begin{displaymath}
+        \max_{z\in \mathbb{R}^{p}: \Omega^{*}(z)\leq \lambda} -f^{*}(z) \leq \min_{\omega \in \mathbb{R}^{p}} f(\omega) + \lambda \Omega(\omega),
+    \end{displaymath}
+    la igualdad se alcanza si el dominio de $f$ tiene interior no vac\'{i}o.
+\end{proposition}
+
+Esta proposici\'{o}n nos dice que si $\omega^{*}$ es una soluci\'{o}n del problema (\ref{eq:generalProblem}) y $z\in \mathbb{R}^{p}$ es un vector tal que $\Omega^{*}(z)\leq\lambda$, entonces para cualquier vector $\omega \in \mathbb{R}^{p}$ se cumple que
+\begin{equation}\label{eq:dualityGap}
+    -f^{*}(z) \leq f(\omega^{*})+ \lambda\Omega(\omega^{*})\leq f(\omega) + \lambda\Omega(\omega).
+\end{equation}
+
+A la diferencia entre los t\'{e}rminos de la derecha y la izquierda de (\ref{eq:dualityGap}) se le conoce como el ``gap de dualidad''. Si $z^{*}, \omega^{*}$ son soluciones del problema dual y primal, respectivamente, tenemos que el gap de dualidad $f(\omega^{*}) + \lambda\Omega(\omega^{*}) - (-f(z^{*}))$ es cero (siempre que el interior del dominio de $f$ sea no vac\'{i}o). Cuando el gap de dualidad es cero, decimos que hay {\it dualidad fuerte}.\\
+
+Los gaps de dualidad son importantes en optimizaci\'{o}n convexa porque nos dan una cota superior para la diferencia entre el valor actual de la funci\'{o}n objetivo y el valor \'{o}ptimo, lo cual nos permite establecer criterios de paro para algoritmos iterativos (si el gap dual es muy cercano a cero, sabemos que estamos muy cerca del \'{o}ptimo). Para calcular el gap dual, necesitamos elegir un ``buen'' valor para $z$ (lo ideal ser\'{i}a conocer $z^{*}$).\\
+
+Si $\omega^{*}$ es la soluci\'{o}n del problema (\ref{eq:generalProblem}), entonces satisface la condici\'{o}n de optimalidad (teorema \ref{thm:normProperties}):
+\begin{displaymath}
+    -\frac{1}{\lambda}\nabla f(w^{*})^T \omega^{*} = \Omega(\omega^{*})
+\end{displaymath}
+y si $z^{*}$ es la soluci\'{o}n del problema dual, entonces el gap de dualidad es cero:
+\begin{displaymath}
+    -f^{*}(z^{*}) = f(\omega^{*}) + \lambda \Omega(\omega^{*}) = f(\omega^{*}) + \lambda (-\frac{1}{\lambda}\nabla f(w^{*})^T \omega^{*}) = f(\omega^{*}) - <\nabla f(w^{*}), \omega^{*}>
+\end{displaymath}
+entonces
+\begin{displaymath}
+    f(\omega^{*})+f^{*}(z^{*}) = <\nabla f(w^{*}), \omega^{*}>.
+\end{displaymath}
+La igualdad en la desigualdad de Fenchel, se alcanza en el \'{o}ptimo, $z^{*}$:
+\begin{displaymath}
+    f(\omega^{*})+f^{*}(z^{*}) = <z^{*}, \omega^{*}>.
+\end{displaymath}
+Entonces dada una aproximaci\'{o}n actual $\omega^{t}$ una elecci\'{o}n razonable de $z^{t}$ para calcular el gap de dualidad es
+\begin{displaymath}
+    z^{t} = \min\left\lbrace 1, \frac{\lambda}{\Omega^{*}(\nabla f(\omega^{t}))}\right\rbrace \nabla f(\omega^{t})
+\end{displaymath}
+es decir, ``elegimos'' $z^{t}$ igual a  $\nabla f(\omega^{t})$, pero asegur\'{a}ndonos de que sea factible seg\'{u}n el problema dual (su norma dual debe ser menor o igual que $\lambda$). La generalizaci\'{o}n de los algoritmos de descenso de gradiente a funciones no diferenciables es el ``descenso de subgradiente'', el cual se puede utilizar siempre que sea posible calcular eficientemente un subgradiente de la funci\'{o}n objetivo. En el problema (\ref{eq:generalProblem}), esto depende de que podamos calcular un subgradiente de $\Omega$, ya que $f$ es diferenciable. El algoritmo gen\'{e}rico de descenso de subgradiente est\'{a} dado por el siguiente esquema iterativo:
+\begin{equation}\label{eq:subgradient_descent}
+    \omega_{t+1} = \omega_{t} - \frac{\alpha}{t}(s + \lambda s'),
+\end{equation}
+donde $s\in \partial f(\omega_t)$, y $s'\in \partial \Omega(\omega_t)$.
+
+\section{M\'{etodos proximales}}
+Los m\'{e}todos proximales est\'{a}n especificamente dise\~{n}ados para resolver problemas como (\ref{eq:generalProblem}), en los que $f$ es una funci\'{o}n diferenciable cuyo gradiente es una funci\'{o}n Lipchitz continua y $\Omega$ es una funci\'{o}n no diferenciable.\\
+
+\begin{definition}[funci\'{o}n Lipschitz continua]
+    sean $\mathcal{X}$ y $\mathcal{Y}$ dos espacios normados con normas $||\cdot||_{\mathcal{X}}, ||\cdot||_{\mathcal{Y}}$, respectivamente. Decimos que una funci\'{o}n $f:\mathcal{X} \rightarrow \mathcal{Y}$ es {\it Lipschitz continua} con constante $L$, si $\forall x,y\in\mathcal{X}, ||f(x) - f(y)||_{\mathcal{Y}} \leq L ||x-y||_{\mathcal{X}}$.\\
+\end{definition}
+
+Los m\'{e}todos proximales se pueden describir de la siguiente manera. En cada iteraci\'{o}n, la funci\'{o}n $f$ se aproxima linealmente alrededor de la aproximaci\'{o}n actual $\omega_t$:
+\begin{equation}\label{eq:prox_approx}
+    f(\omega) \approx f(\omega_t) + \nabla f(\omega_t)^{T}(\omega - \omega_t)
+\end{equation}
+y se resuelve una instancia del problema (\ref{eq:generalProblem}), usando esta aproximacion mas un t\'{e}rmino de regularizaci\'{o}n que mantiene a la soluci\'{o}n cercana ({\it pr\'{o}xima}) al punto actual $\omega_t$, donde $f$ es muy similar a su aproximaci\'{o}n lineal. En cada paso se resuelve:
+\begin{equation}\label{eq:prox_iter}
+    \min_{\omega \in \mathbb{R}^{p}} f(\omega_t) + \nabla f(\omega_t)^{T}(\omega - \omega_t) + \lambda\Omega(\omega) + \frac{L}{2}||\omega - \omega_t||^{2}_2,
+\end{equation}
+el t\'{e}rmino cuadr\'{a}tico se llama {\it t\'{e}rmino proximal}. $L$ es un par\'{a}metro que idealmente es una cota superior a la constante de Lipschitz del gradiente $\nabla f$, pero como normalmente no contamos con dicha cota, se utiliza alguna estimaci\'{o}n.\\
+
+Notemos que el problema (\ref{eq:prox_iter}) es equivalente:
+\begin{equation}\label{eq:prox_iter_simplified}
+    \min_{\omega \in \mathbb{R}^{p}} \frac{1}{2}||\omega - (\omega^t - \frac{1}{L}\nabla f(\omega^t)) ||_2^2 + \frac{\lambda}{L}\Omega(\omega).
+\end{equation}
+En cada paso, el vector $u=(\omega^t - \frac{1}{L}\nabla f(\omega^t))$ es constante y si denotamos $\mu=\frac{\lambda}{L}$, podemos escribir el problema (\ref{eq:prox_iter_simplified}) como
+\begin{equation}\label{eq:moreau}
+    \min_{\omega \in \mathbb{R}^{p}} \frac{1}{2}||\omega - u ||_2^2 + \mu\Omega(\omega).
+\end{equation}
+a esta funci\'{o}n se le conoce como la ``envolvente de Moreau'' de $\Omega$ con par\'{a}metro $\mu$, evaluada en $u$. Si $\Omega$ es una funci\'{o}n convexa, entonces la envolvente de Moreau de $\Omega$ es convexa y diferenciable y tiene un \'{u}nico m\'{i}nimo global. Al minimizador \'{u}nico de (\ref{eq:moreau})se le denota por $Prox_{\mu \Omega}(u)$:
+\begin{equation}\label{eq:prox}
+    Prox_{\mu \Omega}(u) = \arg\min_{\omega \in \mathbb{R}^{p}} \frac{1}{2}||\omega - u||_2^{2} + \mu\Omega(\omega).
+\end{equation}
+De este modo, el algoritmo proximal b\'{a}sico para el problema (\ref{eq:generalProblem}), est\'{a} dado por el esquema iterativo:
+\begin{equation}\label{eq:prox_iter_compact}
+    \omega_{t+1} = Prox_{\frac{\lambda}{L}\Omega}(\omega^t - \frac{1}{L}\nabla f(\omega^t)).
+\end{equation}
+Una manera de calcular la constante $L$ es comenzar con un valor de $L$ relativamente peque\~{n}o (de tal forma que el t\'{e}rmino proximal es peque\~{n}o) e incrementar $L$ por un factor constante hasta que se cumpla la ``condici\'{o}n de convexidad fuerte'':
+\begin{equation}\label{eq:strongly_convex}
+    f(\omega^{*}_L) \leq f(\omega^t) + \nabla f(\omega^t)^{T}(\omega^{*}_L - \omega^{t}) + \frac{L}{2}||\omega_L^{*} - \omega^{t}||_2^{2}
+\end{equation}
+donde $\omega^{*}_L$ es la soluci\'{o}n de (\ref{eq:prox_iter}). Intuitivamente, la condici\'{o}n (\ref{eq:strongly_convex}) encuentra un valor de $L$ tal que $f$ es fuertemente convexa en una vecindad de $\omega^{t}$ que contiene al punto proximal $\omega^{*}_L$.\\
+
+\subsection{C\'{a}lculo del operador proximal}
+Nuestro objetivo ahora es calcular eficientemente el operador proximal para despu\'{e}s utilizarlo en el esquema iterativo mencionado arriba. La ventaja es que el c\'{a}lculo del operador proximal consiste en minimizar el cuadrado de la normal $L_2$ regularizada con la norma $\Omega$ (lo cual deber\'{i}a ser m\'{a}s sencillo que el problema original).\\
+
+El problema dual de (\ref{eq:moreau}) se puede encontrar muy f\'{a}cilmente calculando la conjugada convexa del primer t\'{e}rmino: sea $g(\omega) = \frac{1}{2}||\omega - u ||_2^2$, entonces
+\begin{displaymath}
+    g^{*}(z) = \sup_{\omega \in \mathbb{R}^{p}} <\omega, z> - g(\omega) = \sup_{\omega \in \mathbb{R}^{p}} <\omega, z> - \frac{1}{2}||\omega - u ||_2^2
+\end{displaymath}
+para calcular este supremo simplemente derivamos respecto a $\omega$ e igualamnos a cero para encontrar $w^{*} = z+u$, entonces
+\begin{displaymath}
+    g^{*}(z) = <z+u, z> - \frac{1}{2}||z+u-u||_2^2 = ||z||_2^{2} + <u,z> - \frac{1}{2}||z||_2^2 = \frac{1}{2}\left[ ||z||_2^2 + 2<u,z> + ||u||_2^2 - ||u||_2^2\right]
+\end{displaymath}
+\begin{displaymath}
+   =\frac{1}{2}\left[ ||z+u||_2^2  - ||u||_2^2\right]
+\end{displaymath}
+por lo tanto, el problema dual de (\ref{eq:moreau}) es
+\begin{equation}\label{eq:dual_proximal_operator}
+   \max_{z\in \mathbb{R}^{p}: \Omega^{*}(z)\leq \mu} -g^{*}(z) = \max_{z\in \mathbb{R}^{p}: \Omega^{*}(z)\leq \mu} -\frac{1}{2}\left[ ||z+u||_2^2 - ||u||_2^2\right]
+\end{equation}
+
+Usando este resultado se puede probar que el operador proximal siempre se puede calcular como el residual de una proyecci\'{o}n sobre un conjunto convexo:
+\begin{theorem}[Relaci\'{o}n con el operador proximal dual]
+    sea $Prox_{\mu\Omega}$ el operador proximal asociado al regularizador $\mu\Omega$, donde $\Omega$ es una norma. Sea $Proj_{\Omega^{*}(\cdot)\leq\mu}$ el operador de proyecci\'{o}n sobre la bola de radio $\mu$ de la norma dual $\Omega^{*}$. Entonces $Proj_{\Omega^{*}(\cdot)\leq\mu}$ es el operador proximal para el problema dual (\ref{eq:dual_proximal_operator}). Adem\'{a}s estos dos operadores satisfacen la descomposici\'{o}n de Moreau:
+    \begin{equation}
+        Prox_{\mu\Omega} = I - Proj_{\Omega^{*}(\cdot)\leq\mu}.
+    \end{equation}
+\end{theorem}
+
+\subsection{Algoritmos de descenso por coordenadas}
+Estos algoritmos optimizan la funci\'{o}n objetivo una variable a la vez, dejando el resto fijas. Recordemos que es posible resolver eficientemente el problema de m\'{i}nimos cuadrados regularizados con la norma $\ell_1$ en una sola variable usando ``soft-thresholding'':
+\begin{equation}\label{eq:reminder_soft_thresholding}
+    \arg\min_{\omega \in \mathbb{R}} \frac{1}{2}(\omega - \omega_0)^2 + \lambda|\omega| = \left\lbrace\begin{array}{ll}
+            x-sign(x)\lambda & |x|>\lambda\\
+            0 & |x|\leq \lambda\\
+        \end{array}\right.
+\end{equation}
+Consideremos el modelo Lasso:
+\begin{displaymath}
+    \min_{\omega \in \mathbb{R}^{p}} ||X\omega -y||_2^{2} + \lambda||\omega||_1,
+\end{displaymath}
+expresando la funci\'{o}n objetivo $f(\omega)=||X\omega -y||_2^{2}$ alrededor de la iteraci\'{o}n actual $\omega^{t}$, obtenemos:
+\begin{displaymath}
+    f(\omega)\approx f(\omega^{t}) + \nabla f(\omega^{t})^T(\omega - \omega^t) + (\omega - \omega^t)^T Hf(\omega^t)(\omega - \omega^t)
+\end{displaymath}
+\begin{displaymath}
+    =K + (X^T(X\omega - y))^T(\omega - \omega^t) + (\omega - \omega^t)^T X^TX(\omega - \omega^t)
+\end{displaymath}
+donde $K$ es una constante que no depende de $\omega$. Entonces podemos aproximar el modelo Lasso como
+\begin{displaymath}
+    \min_{\omega \in \mathbb{R}^{p}} (X^T(X\omega - y))^T(\omega - \omega^t) + (\omega - \omega^t)^T X^TX(\omega - \omega^t) + \lambda||\omega||_1,
+\end{displaymath}
+si consideramos \'{u}nicamente la variable $\omega_j$, dejando el resto fijas, obtenemos:
+\begin{displaymath}
+    \min_{\omega_j \in \mathbb{R}} (X_j^T(X\omega - y))^T(\omega_j - \omega_j^t) + X_j^TX_j(\omega_j - \omega_j^t)^2 + \lambda||\omega_j||_1,
+\end{displaymath}
+reorganizando los t\'{e}rminos, este problema es de la forma (\ref{eq:reminder_soft_thresholding}), por lo que podemos optimizar cada variable usando ``soft-thresholding''.
+
+\section{Formulaciones variacionales para sumas de normas $\ell_2$}
+Esta secci\'{o}n trata de aproximaciones de problemas de optimizaci\'{o}n no suaves o con restricciones mediante una serie de problemas suaves sin restricciones. El ejemplo que se considera es el de la norma $\ell_1/\ell_2$ $\Omega(\omega) = \sum_{g\in \mathcal{G}} ||\omega_g||_2$. Si suponemos que $||\omega_g||_2 \neq 0$, esta norma se puede escribir como:
+\begin{displaymath}
+    \Omega(\omega) = \frac{1}{2} \min_{\eta_g \geq 0}\sum_{g\in\mathcal{G}} \left\lbrace \frac{||\omega_g||_2^2}{\eta_g} + \eta_g\right\rbrace,
+\end{displaymath}
+este m\'{i}nimo se alcanza cuando $\eta_g = ||\omega_g||_2$. Expandiendo la suma $\ell_2$ cuadrada de cada t\'{e}rmino, tenemos
+\begin{displaymath}
+    \Omega(\omega) = \frac{1}{2} \min_{\eta_g \geq 0}\sum_{g\in\mathcal{G}} \left\lbrace \frac{\sum_{j\in g}\omega_j^2}{\eta_g} + \eta_g\right\rbrace
+\end{displaymath}
+\begin{displaymath}
+    = \frac{1}{2} \min_{\eta_g \geq 0}\sum_{j=1}^{p} \left(\sum_{g \in \mathcal{G}: j\in g} \frac{1}{\eta_g}\right)\omega_j^2 + \sum_{g \in \mathcal{G}}\eta_g
+\end{displaymath}
+\begin{displaymath}
+    = \frac{1}{2} \min_{\eta_g \geq 0}\sum_{j=1}^{p} \kappa_j\omega_j^2 + \sum_{g \in \mathcal{G}}\eta_g.
+\end{displaymath}
+Mediante esta formulaci\'{o}n, sustituimos la norma $\ell_1/\ell_2$ por la expresi\'{o}n anterior:
+\begin{displaymath}
+    \min_{\omega, \eta} f(\omega) + \frac{\lambda}{2}\sum_{j=1}^{p} \kappa_j\omega_j^2 + \frac{\lambda}{2}\sum_{g\in\mathcal{G}}\eta_g.
+\end{displaymath}
+Esta funci\'{o}n es convexa como funci\'{o}n de $(\omega, \eta)$, el \'{o}ptimo respecto a $\eta$ se puede obtener f\'{a}cilmente derivando respecto a cada $eta_g$ e igualando a cero, obteniendo as\'{i} una soluci\'{o}n cerrada. En cuanto a la optimizaci\'{o}n respecto a $\omega$, se trata de un problema de optimizaci\'{o}n de $f$ regularizada con la norma $\ell_2$ (pesada por las constantes $\kappa$). Esto sugiere un esquema de optimizaci\'{o}n de dos pasos (optimizar alternadamente respecto a $\eta$ y respecto a $\omega$), lamentablemente este esquema no converge en general porque la funci\'{o}n objetivo no es continua (e.g. alrededor de $\eta$ con alg\'{u}n $\eta_g=0$).
+\section{Hechos \'{u}tiles}
+Si $x$ y $y$ son funciones escalares (con valores en $\mathbb{R}$, digamos) integrables, definidas en un espacio de medida $(O, \Sigma, \mu)$ y consideramos el producto interior usual
+\begin{displaymath}
+    <x,y> = \int_{O} xy d\mu
+\end{displaymath}
+entonces se satisface la desigualdad de Holder:
+\begin{equation}
+    |<x,y>| \leq ||x||_{p} ||y||_{q}
+\end{equation}
+donde $p, q \geq 1$, y $\frac{1}{p}+\frac{1}{q} = 1$. La igualdad se alcanza cuando las funciones $|x|^p$ y $|y|^q$ son linealmente dependientes, casi en todas partes $(\mu)$.
+
+Sea $\Omega$ una norma y denotemos por $\Omega_{d}$ su norma dual. Si $\Omega=||\cdot||_p$ con $p\geq 1$, entonces por definici\'{o}n:
+\begin{equation}
+    \Omega_{d}(y) = \sup_{x: \Omega(x)\leq 1} <x,y>,
+\end{equation}
+eligiendo $x = |y|^{\frac{q}{p}}$, tenemos $|x|^{p} = |y|^{q}$ y se alcanza la igualdad en la desigualdad de Holder, por lo que:
+\begin{equation}
+    \Omega_{d}(y) = \frac{||x||_p||y||_q}{||x||_p} = ||y||_q
+\end{equation}
+(t\'{e}cnicamente, necesitamos verificar que $||x||_p$ es finita) es decir, la norma dual de $||\cdot||_{p}$ es $||\cdot||_{q}$ donde $\frac{1}{p} + \frac{1}{q} = 1$.\\
+
+La conjugada convexa de la norma $\Omega$ es la funci\'{o}n indicadora del conjunto $\left\lbrace x : \Omega_d(x)\leq 1\right\rbrace$, es decir:
+\begin{equation}
+    \Omega^{*}(x) = \iota_{\left\lbrace\Omega_d(\cdot) \leq 1\right\rbrace}(x)
+\end{equation}
+donde
+\begin{equation}
+    \iota_{C}(x) = \left\lbrace\begin{array}{ll}
+        0   &   x\in C\\
+        \infty   &   x \notin C
+    \end{array}\right.
+\end{equation}
+Para verificar esto, partiendo de la definici\'{o}n de conugada de Fenchel, eligiendo $x$ colineal a $y$ y usando la desigualdad de Holder para el producto de una norma con su dual:
+\begin{equation}
+    \Omega^{*}(y) = \sup_{x} <x,y> - \Omega(x) = \sup_{x =\alpha y} \Omega(x)\Omega_d(y) - \Omega(x) = \sup_{x =\alpha y} \Omega(x)(\Omega_d(y) - 1) = \iota_{\left\lbrace\Omega_d(\cdot) \leq 1\right\rbrace}(y),
+\end{equation}
+ya que si $\Omega_d(y) \leq 1$ entonces el supremo es $0$, de otro modo, podemos incrementar el producto arbitrariamente y el supremo es infinito.
+
+\section{Applicaciones}
+\subsection{Variaci\'{o}n generalizada total para reconstrucci\'{o}n DW-MRI}
+La versi\'{o}n simplificada de la variaci\'{o}n generalizada total de orden $k$ con par\'{a}metros $\alpha \in \mathbb{R}^{k}$ es:
+\begin{equation}
+    TGV_{\alpha}^{k}(u)= \inf_{u_l \in \mathcal{C}^{k-l}(\bar{\Omega}, Sym^{l}(\mathbb{R}^{d}) )} \sum_{l=1}^{k} \alpha_{k-l}||\mathcal{E}(u_{l-1}) - u_{l}||_1
+\end{equation}
+donde $u_l:\bar{\Omega} \rightarrow Sym^{l}(\mathbb{R}^{d})$ es un campo tensorial sim\'{e}trico continuo, $k-l$ veces diferenciable de orden $l$ en $\mathbb{R}^{d}$, $\bar{\Omega}$ es la cerradura del dominio $\Omega \subset \mathbb{R}^{d}$ de $u$, $\mathcal{E}: Sym^{l}(\mathbb{R}^{d}) \rightarrow Sym^{l+1}(\mathbb{R}^{d})$ es el operador de derivaci\'{o}n sim\'{e}trico, $u_0 = u$, $u_k = 0$\\
+
+En el caso $k=2$ tenemos:
+\begin{equation}
+    TGV_{\alpha}^{2}(u)= \inf_{v \in \mathcal{C}^{1}(\bar{\Omega}, Sym^{1}(\mathbb{R}^{d}) )} \alpha_{1}||\nabla u - u_{1}||_{1} + \alpha_{0}||D u_{1}||_{1}.
+\end{equation}
+
+Formulaci\'{o}n del problema de reconstrucci\'{o}n local:
+\begin{equation}
+    \min_{u, v} \frac{1}{2}||\Phi u - S||_{2}^{2} + \lambda ||u||_1 + \alpha_{1}||\nabla u - v||_{1} + \alpha_{0}||D v||_{1}.
+\end{equation}
+Aqu\'{i}, $\Phi$ es una matriz de $n\times m$,  $u:\mathbb{R}^{d} \rightarrow \mathbb{R}^{m}$ es un campo vectorial (vectores de coeficientes) definido en $\mathbb{R}^{d}$ ($d=2$ o $d=3$), $n$ es el n\'{u}mero de coeficientes $\Phi u$ denota el campo vectorial dado por $\left[\Phi u\right] (x) = \Phi u(x)$. $S:\mathbb{R}^{d} \rightarrow \mathbb{R}^{n}$ es el campo vectorial de observaciones.
+
+\subsection{Desenvolvimiento de fase}
+Estamos interesados en el problema:
+\begin{equation}
+    \min_{f} \frac{1}{2}f^{T}Ef + ||\nabla f - g||_1
+\end{equation}
+donde $f$ es una imagen, $E = e_{0}e_{0}^{T}$, y $g$ es un campo vectorial envuelto obtenido a partir de un patr\'{o}n de franjas observado $h$, es decir, $g=wrap(\nabla h)$.\\
+
+Sea $G(x)=\frac{1}{2}x^T E x$, $F_{g}(y) = ||y-g||_1$, $F(y) = ||y||_1$, entonces nuestro problema es
+\begin{equation}
+    \min_{f} G(f) + F_{g}(\nabla f).
+\end{equation}
+Entonces podemos aplicar el algoritmo de Chambolle {\it et al.}. Veamos los operadores de proximidad:
+\begin{equation}
+    Prox_{\sigma G}(\tilde{x}) = \arg\min_{x} \frac{1}{2}x^T E x + \frac{1}{2\sigma} ||x-\tilde{x}||_{2}^{2}.
+\end{equation}
+Derivando respecto a $x$ e igualando a cero obtenemos
+\begin{equation}
+    \left(E+\frac{1}{\sigma}I\right)x = \frac{1}{\sigma}\tilde{x}
+\end{equation}
+y el operador inverso es
+\begin{equation}
+    \left(E+\frac{1}{\sigma}I\right)^{-1} = \left(\sigma I - \frac{\sigma^{2}}{\sigma + 1}E \right)
+\end{equation}
+por lo que
+\begin{displaymath}
+    Prox_{\sigma G}(\tilde{x}) = \left( I-\frac{\sigma}{1+\sigma}E \right)\tilde{x}
+\end{displaymath}
+Ahora veamos el operador de proximidad de la conjugada de convexa de $F_g$. Primero calculemos la conjugada convexa, haciendo el cambio de variable $z=y-g$, $y=z+g$:
+\begin{displaymath}
+    F^{*}_{g}(\tilde{y}) = \sup_{y} <y, \tilde{y}> - ||y-g||_{1} = \sup_{z} <z+g, \tilde{y}> - ||z||_{1}
+\end{displaymath}
+\begin{displaymath}
+    =<g, \tilde{y}> + \sup_{z} <z, \tilde{y}> - ||z||_{1} = <g, \tilde{y}> + F^{*}(\tilde{y})
+\end{displaymath}
+Pero sabemos que la conjugada convexa de una norma es la funci\'{o}n indicadora sobre la bola unitaria respecto a su norma dual:
+\begin{equation}
+    F^{*}(\tilde{y}) = \iota_{\left\lbrace ||\cdot||_{\infty}\leq 1 \right\rbrace}(\tilde{y}) = \left\lbrace \begin{array}{ll}
+        0   &   ||\tilde{y}||_{\infty} \leq 1\\
+        \infty   &   ||\tilde{y}||_{\infty} > 1
+        \end{array}\right.
+\end{equation}
+donde en el caso de un campo vectorial $y$, la norma $\ell_{\infty}$ se define como
+\begin{equation}
+    ||y||_{\infty} = \max_{i} ||y_i||_2
+\end{equation}
+Ahora calculemos el operador de proximidad de la conjugada convexa:
+\begin{displaymath}
+    Prox_{\tau F^{*}_{g}}(\tilde{y}) = \arg\min_{y} F^{*}_{g}(y) + \frac{1}{2\tau}||y-\tilde{y}||_{2}^{2} =
+    \arg\min_{y} F^{*}(y) + <g, y> + \frac{1}{2\tau}||y-\tilde{y}||_{2}^{2}
+\end{displaymath}
+\begin{displaymath}
+    =\arg\min_{y: ||y||_{\infty}\leq 1} <g,y> + \frac{1}{2\tau}||y-\tilde{y}||_{2}^{2}.
+\end{displaymath}
+Ahora, notemos que esto es una suma de t\'{e}rminos desacoplados, con restricciones desacopladas, por lo que podemos minimizar cada t\'{e}rmino por separado:
+
+\begin{displaymath}
+    Prox_{\tau F^{*}_{g}}(\tilde{y})_{i}=\arg\min_{y_{i}: ||y_{i}||_{2}\leq 1} <g_i,y_i> + \frac{1}{2\tau}||y_i-\tilde{y_i}||_{2}^{2}.
+\end{displaymath}
+derivando e igualando a cero:
+\begin{displaymath}
+    y_{i} = \tilde{y}_i - \tau g_i.
+\end{displaymath}
+Esta es la soluci\'{o}n no restringida. Si $||\tilde{y}_i - \tau g_i||_2 \leq 1$ entonces esta es la soluci\'{o}n, de otro modo, la soluci\'{o}n es la proyecci\'{o}n sobre la bola unitaria Euclideana. En general tenemos:
+\begin{displaymath}
+    y_{i} = \frac{1}{\max\left\lbrace 1, ||\tilde{y}_i - \tau g_i||_2\right\rbrace}(\tilde{y}_i - \tau g_i)
+\end{displaymath}
+
+
+\section{Track selection}
+We are interested in solving the following problem
+\begin{equation}
+    \min_{x} ||Ax||_{2}^{2} \;\; s.t. \;\; Bx \geq c
+\end{equation}
+where $c\geq 0$. Let $C=\left\lbrace x: x\leq 0 \right\rbrace$, and define the indicator function
+\begin{equation}
+    \iota_C(x) =
+        \left\lbrace\begin{array}{ll}
+            0, & x\in C\\
+            \infty, & x\notin C\\
+        \end{array}\right.
+\end{equation}
+further define
+\begin{equation}
+    F(x) = \iota_{C}(x + c)
+\end{equation}
+then our problem can be written as
+\begin{equation}
+    \min_{x} ||Ax||_{2}^{2} +F(-Bx)
+\end{equation}
+Now, from the definition of convex conjugate, we have
+\begin{equation}
+    F(z) = \max_{y} <z, y> - F^{*}(y) \Rightarrow F\left(-Bx \right) = \max_{y}<-Bx, y> - F^{*}(y)
+\end{equation}
+and the problem can be written as the saddle point problem:
+\begin{equation}
+    \min_{x} \max_{y} <-Bx, y> - F^{*}(y) + ||Ax||_{2}^{2}
+\end{equation}
+This saddle point problem can be solved using the iterative algorithm by Chambolle et al., which only requires computing the proximity operator for $F^{*}$ and $||Ax||_{2}^{2}$. Let's first compute the convex conjugate $F^{*}$ and its proximity operator:
+\begin{displaymath}
+    F^{*}(y) = \max_{z}<y,z> - F(z) = \max_{z}<y,z> - \iota_{C}(c+z) = \max_{z \leq -c} <y, z> =
+    \left\lbrace\begin{array}{ll}
+        -c^Ty, & y\geq 0\\
+        \infty, & otherwise\\
+    \end{array}\right.
+\end{displaymath}
+Now, we can compute the proximity operator:
+\begin{displaymath}
+    Prox_{\tau F^{*}}(y) = \arg\min_{x} \frac{||x-y||_{2}^{2}}{2\tau} + F^{*}(x)=
+\end{displaymath}
+\begin{displaymath}
+    \arg\min_{x\geq 0} \frac{||x-y||_{2}^{2}}{2\tau} -c^Tx = \arg\min_{x\geq 0} \sum_{i=1}^{n}\left[\frac{(x_i - y_i)^{2}}{2\tau}-c_ix_i\right]
+\end{displaymath}
+we can minimize each component independently, computing the derivative with respect to $x_i$, equating to zero and handling the constraint $x_i \geq 0$ we obtain a closed form expression for the proximity operator:
+\begin{displaymath}
+    x_i =
+    \left\lbrace\begin{array}{ll}
+        \tau c_i + y_i, & y_i \geq - \tau c_i \\
+        0, & y_i < -\tau c_i \\
+    \end{array}\right.
+\end{displaymath}
+
+The proximity operator for $G(x) = ||Ax||_{2}^{2}$ can be easily computed using conjugate gradient (for which a large scale version exists):
+\begin{displaymath}
+    Prox_{\sigma G^{*}}(y) = \arg\min_{x} \frac{||x-y||_{2}^{2}}{2\sigma} + ||Ax||_{2}^{2}
+\end{displaymath}
+which can be written in standard least squares form, if necessary.
+\end{document}
+
+%%%%%%%%%%%%%Spherical Harmonics%%%%%%%%%%%%%%%%%%%
+\begin{table}[ht]
+    \begin{center}
+        \renewcommand{\tabcolsep}{0.1cm}
+        \begin{tabular}{c|c|c|c|c|c|c}
+            \hline
+                &   &   &$\hat{f}_{0}^{0}$&   &   &   \\
+            \hline
+                &   &$\hat{f}_{-1}^{1}$&$\hat{f}_{0}^{1}$&$\hat{f}_{1}^{1}$&   &   \\
+            \hline
+                &$\hat{f}_{-2}^{2}$&$\hat{f}_{-1}^{2}$&$\hat{f}_{0}^{2}$&$\hat{f}_{1}^{2}$&$\hat{f}_{2}^{2}$   &   \\
+            \hline
+            $\hat{f}_{-3}^{3}$&$\hat{f}_{-2}^{3}$&$\hat{f}_{-1}^{3}$&$\hat{f}_{0}^{3}$&$\hat{f}_{1}^{3}$&$\hat{f}_{2}^{3}$   &$\hat{f}_{3}^{3}$   \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+
+%%%%%%%%%%%%%Rotational Harmonics%%%%%%%%%%%%%%%%%%%
+\begin{table}[ht]
+    \begin{center}
+        \renewcommand{\tabcolsep}{0.1cm}
+        \begin{tabular}{|c|}
+            \hline
+                $\hat{f}_{0,0}^{0}$\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+
+\begin{table}[ht]
+    \begin{center}
+        \renewcommand{\tabcolsep}{0.1cm}
+        \begin{tabular}{c|c|c}
+            \hline
+                $\hat{f}_{-1,-1}^{1}$&$\hat{f}_{-1,0}^{1}$&$\hat{f}_{-1,1}^{1}$\\
+            \hline
+                $\hat{f}_{0,-1}^{1}$&$\hat{f}_{0,0}^{1}$&$\hat{f}_{0,1}^{1}$\\
+            \hline
+                $\hat{f}_{1,-1}^{1}$&$\hat{f}_{1,0}^{1}$&$\hat{f}_{1,1}^{1}$\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+
+\begin{table}[ht]
+    \begin{center}
+        \renewcommand{\tabcolsep}{0.1cm}
+        \begin{tabular}{c|c|c|c|c}
+            \hline
+                $\hat{f}_{-2,-2}^{1}$&$\hat{f}_{-2,-1}^{1}$&$\hat{f}_{-2,0}^{1}$&$\hat{f}_{-2,1}^{1}$&$\hat{f}_{-2,2}^{1}$\\
+            \hline
+                $\hat{f}_{-1,-2}^{1}$&$\hat{f}_{-1,-1}^{1}$&$\hat{f}_{-1,0}^{1}$&$\hat{f}_{-1,1}^{1}$&$\hat{f}_{-1,2}^{1}$\\
+            \hline
+                $\hat{f}_{0,-2}^{1}$&$\hat{f}_{0,-1}^{1}$&$\hat{f}_{0,0}^{1}$&$\hat{f}_{0,1}^{1}$&$\hat{f}_{0,2}^{1}$\\
+            \hline
+                $\hat{f}_{1,-2}^{1}$&$\hat{f}_{1,-1}^{1}$&$\hat{f}_{1,0}^{1}$&$\hat{f}_{1,1}^{1}$&$\hat{f}_{1,2}^{1}$\\
+            \hline
+                $\hat{f}_{2,-2}^{1}$&$\hat{f}_{2,-1}^{1}$&$\hat{f}_{2,0}^{1}$&$\hat{f}_{2,1}^{1}$&$\hat{f}_{2,2}^{1}$\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table}
+
+%\begin{displaymath}
+%    F: SO(3)\rightarrow \mathbb{C}
+%\end{displaymath}
+
+
+
+
+
+
+
+
+
+
+
