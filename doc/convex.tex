@@ -493,8 +493,38 @@ Formulaci\'{o}n del problema de reconstrucci\'{o}n local:
 \begin{equation}
     \min_{u, v} \frac{1}{2}||\Phi u - S||_{2}^{2} + \lambda ||u||_1 + \alpha_{1}||\nabla u - v||_{1} + \alpha_{0}||D v||_{1}.
 \end{equation}
-Aqu\'{i}, $\Phi$ es una matriz de $n\times m$,  $u:\mathbb{R}^{d} \rightarrow \mathbb{R}^{m}$ es un campo vectorial (vectores de coeficientes) definido en $\mathbb{R}^{d}$ ($d=2$ o $d=3$), $n$ es el n\'{u}mero de coeficientes $\Phi u$ denota el campo vectorial dado por $\left[\Phi u\right] (x) = \Phi u(x)$. $S:\mathbb{R}^{d} \rightarrow \mathbb{R}^{n}$ es el campo vectorial de observaciones.
+Aqu\'{i}, $\Phi$ es una matriz de $n\times m$,  $u:\mathbb{R}^{d} \rightarrow \mathbb{R}^{m}$ es un campo vectorial (vectores de coeficientes) definido en $\mathbb{R}^{d}$ ($d=2$ o $d=3$), $n$ es el n\'{u}mero de coeficientes $\Phi u$ denota el campo vectorial dado por $\left[\Phi u\right] (x) = \Phi u(x)$. $S:\mathbb{R}^{d} \rightarrow \mathbb{R}^{n}$ es el campo vectorial de observaciones.\\
 
+Las variables primales son $(u, v)$ ($u(x)$ es un vector en $\mathbb{R}^{m}$, y $v(x)$ es un vector en $\mathbb{R}^{d}$ por cada entrada de $u(x)$, se puede ver como una matriz de $m\times d$)y el operador lineal $K$ es 
+\begin{equation}
+	K=\left[\begin{array}{cl}
+		\nabla & I\\
+		0 & D
+	\end{array}\right].
+\end{equation}
+El operador de derivaci\'{o}n $D$ regresa una matriz de $d\times d$ por cada entrada de $u$: $[Dv](x)$ es un arreglo 3-dimensional, que contiene $m$ matrices de $d\times d$. El operador lineal adjunto $K^{*}$ es
+\begin{equation}
+	K^*=\left[\begin{array}{cl}
+		-div^{1} & 0\\ 
+		I & -div^{2}
+	\end{array}\right]
+\end{equation}
+donde $div^{1}$, $div^{2}$ act\'{u}an sobre campos tensoriales de orden 1 y 2, respectivamente. Por ejemplo $div^{1}(v_{k}(x)), k=1,2,...,m$ (donde $v_k(x)$ es un vector en $\mathbb{R}^{d}$) es
+$div^{1}v_{k}(x)=\sum_{i=1}^{d}\frac{\partial v_{k,i}(x)}{\partial x_{i}}$. An\'{a}logamente, el operador $div^{2}$ act\'{u}a sobre campos tensoriales de orden 2. Por ejemplo si $J$ es un campo $m$-tensorial de orden 2 ($m$ tensores de $d\times d$ por cada coordenada $x$) y denotamos por $J_k$ al $k-$\'{e}simo de esos tensores, entonces
+\begin{equation}
+	div^{2}J_{k}(x)=
+	\left[\begin{array}{l}
+		\sum_{\ell=1}^{d}\frac{\partial[J_{k}]_{1,\ell}}{\partial x_{\ell}}\\
+		\sum_{\ell=1}^{d}\frac{\partial[J_{k}]_{2,\ell}}{\partial x_{\ell}}\\
+		...\\
+		\sum_{\ell=1}^{d}\frac{\partial[J_{k}]_{d,\ell}}{\partial x_{\ell}}\\
+	\end{array}\right]
+\end{equation}
+el cual es ahora un tensor de orden 1 (aplic\'{a}ndolo a todos los $m$ tensores, tenemos un campo $m$-tensorial de orden 1). La formulaci\'{o}n primal-dual  es entonces
+\begin{equation}
+	\min_{u,v} \max_{p,q}-<u, div^{1}p> - <v, div^{2}q-p>+\frac{1}{2}||\Phi u - S||_{2}^{2} + \lambda ||u||_1 + \alpha_{1}||p||_{1} + \alpha_{0}||q||_{1}.
+\end{equation}
+Nota: en este punto, no queda claro c\'{o}mo manejar el t\'{e}rmino $\lambda||u||_{1}$. Quiz\'{a} el procedimiento sea ``dualizar'' $u$ con el operador lineal $I$ e introduciendo otra variable dual $r$ en el mismo espacio que $u$. El operador proximal es entonces muy simple: proyectar en cada $x$ sobre la bola unitaria de la norma $L_{2}$ en cada espacio ($r(x), p(x), q(x)$).
 \subsection{Desenvolvimiento de fase}
 Estamos interesados en el problema:
 \begin{equation}
