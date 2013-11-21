@@ -24,7 +24,7 @@
 \usepackage{algorithm}
 \usepackage{subfig}
 \usepackage{color}
-\usepackage{amsthm}
+
 \newtheorem{definition}{\textbf{Definici\'{o}n}}
 \newtheorem{proposition}{\textbf{Proposici\'{o}n}}
 \newtheorem{theorem}{\textbf{Teorema}}
@@ -651,6 +651,93 @@ The proximity operator for $G(x) = ||Ax||_{2}^{2}$ can be easily computed using 
     Prox_{\sigma G^{*}}(y) = \arg\min_{x} \frac{||x-y||_{2}^{2}}{2\sigma} + ||Ax||_{2}^{2}
 \end{displaymath}
 which can be written in standard least squares form, if necessary.
+
+\section{Displacement field inversion}
+After observing that interpolation of the vector field may be modeled as a linear transformation, the variational formulation can be written as:
+\begin{equation}
+	U(s) = \frac{\lambda}{2}\int_{\Omega_{F}} ||T[s](x) + r(x)||_{2}^{2}dx + \int_{\Omega_{M}}||\nabla s(z)||_{2}dz
+\end{equation}
+or more compactly as 
+\begin{equation}
+	U(s) = \frac{\lambda}{2}||T[s] + r||_{2}^{2} + ||\nabla s||_{2,1}.
+\end{equation}
+The saddle point formulation, using the Fenchel conjugate, is
+\begin{equation}
+	\min_{s}\max_{p,q} <s, -div\;p> + <s, T^{*}[q]> -\frac{\lambda}{2}||q + r||_{2}^{2} -\delta_{P}(p)
+\end{equation}
+where $\delta_{P}$ is the Fenchel's convex conjugate of the $2,1-$norm $||\cdot||_{2,1}$ given by
+\begin{equation}
+	\delta_{P}(\tilde{p}) = \left\lbrace
+		\begin{array}{ll}
+			0 & $if\;$ \max_{z\in\Omega_{M}}\left\lbrace ||\tilde{p}(z)||_{2}\right\rbrace\leq 1\\
+			\infty & $otherwise$
+		\end{array}\right.
+\end{equation}
+
+Now we just need to compute the proximity operator of the convex function
+\begin{equation}
+	F^{*}(p, q) = F_{p}^{*}(p) + F_{q}^{*}(q) = \delta_{P}(p) + \frac{\lambda}{2}||q + r||_{2}^{2}
+\end{equation}
+it is convenient to denote 
+\begin{equation}
+	||\tilde{p}||_{2,\infty}=\max_{z\in\Omega_{M}}\left\lbrace ||\tilde{p}(z)||_{2}\right\rbrace\
+\end{equation}
+since it is a norm computed by first applying the $2-$norm to each vector $q(z), z\in \Omega_{M}$, and then taking the maximum among them. The proximity operator is
+\begin{equation}
+	Prox_{\sigma F_{p}^{*}(\cdot)}(\tilde{p}) = \arg\min_{p:||p||_{2,\infty}\leq 1} \frac{1}{2\sigma}||p-\tilde{p}||_{2}^{2}
+\end{equation}
+\begin{equation}
+	Prox_{\sigma F_{q}^{*}(\cdot)}(\tilde{p}, \tilde{q}) = \arg\min_{q} \frac{\lambda}{2}||q + r||_{2}^{2} + \frac{1}{2\sigma}||q-\tilde{q}||_{2}^{2}
+\end{equation}
+which are simple, since the terms are decoupled and the constraint is only applied to $p$. The minimizer for the $q-$term can be found by differentiating and equating to zero:
+\begin{equation}
+	\sigma\lambda (q+r)+(q-\tilde{q})=0 \Rightarrow q=\frac{1}{1+\sigma\lambda}\left(\tilde{q}-\sigma\lambda r\right).
+\end{equation}
+Finally, the minimizer for the $p-$term can be found by minimizing pointwise (the $2-$norm is a sum of decoupled square terms and the constraint on the norm of each vector, must also be applied pointwise). Thus we need to solve, for each $z\in\Omega_{M}$:
+\begin{equation}
+	\arg\min_{||p(z)||_{2}\leq 1}\frac{1}{2\sigma}||p(z)-\tilde{p}(z)||_{2}^{2}
+\end{equation}
+which is, by definition, the projection of $\tilde{p}$ on the (convex) unit ball with respect to the $2-$norm, so the solution is simply:
+\begin{equation}
+	p(z) = \frac{\tilde{p}(z)}{\max\left\lbrace1, ||\tilde{p}(z)||_{2}\right\rbrace}.
+\end{equation}
+We identify the linear transformations $K$ and its adjoint $K^{*}$ as
+\begin{equation}
+	Ks = 
+	\left[\begin{array}{l}
+		\nabla\\
+		T
+	\end{array}\right]s = 
+	\left[\begin{array}{l}
+		\nabla s\\
+		T[s]
+	\end{array}\right]
+\end{equation}
+\begin{equation}
+	K^{*}\left(\begin{array}{l}p\\q\end{array}\right) = 
+	\left[\begin{array}{cc}
+		-div & T^{*}
+	\end{array}\right]\left(\begin{array}{l}p\\q\end{array}\right) = 
+	-div\;p + T^{*}[q]
+\end{equation}
+where $T^{*}$ is the adjoint of the interpolation operation. To apply Chambolle's algorithm, we need to pick two positive constants $\tau, \sigma$ such that $\tau\sigma L^{2} < 1$, where $L=||K||$ (its norm as a linear operator), and then iterate:
+\begin{equation}
+	\left\lbrace\begin{array}{l}
+		p^{n+1} = Prox_{\sigma F_{p}^{*}(\cdot)}(p^{n} + \sigma \nabla \bar{s}^{n})\\
+		q^{n+1} = Prox_{\sigma F_{q}^{*}(\cdot)}(q^{n} + \sigma T[\bar{s}^{n}])\\
+		s^{n+1} = s^{n} - \tau \left[-div\;p^{n+1} + T^{*}[q^{n+1}]\right]\\
+		\bar{s}^{n+1} = s^{n+1}+\theta(s^{n+1} - s^{n})
+	\end{array}\right.
+\end{equation}
+We already solved the proximity operators:
+\begin{equation}
+	\left\lbrace\begin{array}{l}
+		p^{n+1}(z) = \frac{(p^{n}(z) + \sigma \nabla \bar{s}^{n}(z))}{\max\left\lbrace1, ||(p^{n}(z) + \sigma \nabla \bar{s}^{n}(z))||_{2}\right\rbrace}, \forall z\in \mathcal{L}_{M}\\
+		q^{n+1}(x) = \frac{1}{1+\sigma*\lambda}\left[q^{n}(x) + \sigma T[\bar{s}^{n}](x) - \sigma\lambda r(x)\right],\; \forall x\in \mathcal{L}_F\\
+		s^{n+1} = s^{n} - \tau \left[-div\;p^{n+1} + T^{*}[q^{n+1}]\right]\\
+		\bar{s}^{n+1} = s^{n+1}+\theta(s^{n+1} - s^{n})
+	\end{array}\right.
+\end{equation}
 \end{document}
 
 %%%%%%%%%%%%%Spherical Harmonics%%%%%%%%%%%%%%%%%%%
