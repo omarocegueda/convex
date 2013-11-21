@@ -663,7 +663,7 @@ or more compactly as
 \end{equation}
 The saddle point formulation, using the Fenchel conjugate, is
 \begin{equation}
-	\min_{s}\max_{p,q} <s, -div\;p> + <s, T^{*}[q]> -\frac{\lambda}{2}||q + r||_{2}^{2} -\delta_{P}(p)
+	\min_{s}\max_{p,q} <s, -div\;p> + <s, T^{*}[q]> -\frac{1}{2\lambda}||q||_{2}^{2}+<r,q>-\delta_{P}(p)
 \end{equation}
 where $\delta_{P}$ is the Fenchel's convex conjugate of the $2,1-$norm $||\cdot||_{2,1}$ given by
 \begin{equation}
@@ -676,7 +676,7 @@ where $\delta_{P}$ is the Fenchel's convex conjugate of the $2,1-$norm $||\cdot|
 
 Now we just need to compute the proximity operator of the convex function
 \begin{equation}
-	F^{*}(p, q) = F_{p}^{*}(p) + F_{q}^{*}(q) = \delta_{P}(p) + \frac{\lambda}{2}||q + r||_{2}^{2}
+	F^{*}(p, q) = F_{p}^{*}(p) + F_{q}^{*}(q) = \delta_{P}(p) + \frac{1}{2\lambda}||q||_{2}^{2} - <r,q>
 \end{equation}
 it is convenient to denote 
 \begin{equation}
@@ -687,11 +687,11 @@ since it is a norm computed by first applying the $2-$norm to each vector $q(z),
 	Prox_{\sigma F_{p}^{*}(\cdot)}(\tilde{p}) = \arg\min_{p:||p||_{2,\infty}\leq 1} \frac{1}{2\sigma}||p-\tilde{p}||_{2}^{2}
 \end{equation}
 \begin{equation}
-	Prox_{\sigma F_{q}^{*}(\cdot)}(\tilde{p}, \tilde{q}) = \arg\min_{q} \frac{\lambda}{2}||q + r||_{2}^{2} + \frac{1}{2\sigma}||q-\tilde{q}||_{2}^{2}
+	Prox_{\sigma F_{q}^{*}(\cdot)}(\tilde{p}, \tilde{q}) = \arg\min_{q} \frac{1}{2\lambda}||q||_{2}^{2} -<r,q>+ \frac{1}{2\sigma}||q-\tilde{q}||_{2}^{2}
 \end{equation}
 which are simple, since the terms are decoupled and the constraint is only applied to $p$. The minimizer for the $q-$term can be found by differentiating and equating to zero:
 \begin{equation}
-	\sigma\lambda (q+r)+(q-\tilde{q})=0 \Rightarrow q=\frac{1}{1+\sigma\lambda}\left(\tilde{q}-\sigma\lambda r\right).
+	\frac{\sigma}{\lambda}q-\sigma r+(q-\tilde{q})=0 \Rightarrow q=\frac{\lambda}{\lambda+\sigma}\left(\tilde{q}+\sigma r\right).
 \end{equation}
 Finally, the minimizer for the $p-$term can be found by minimizing pointwise (the $2-$norm is a sum of decoupled square terms and the constraint on the norm of each vector, must also be applied pointwise). Thus we need to solve, for each $z\in\Omega_{M}$:
 \begin{equation}
@@ -733,7 +733,7 @@ We already solved the proximity operators:
 \begin{equation}
 	\left\lbrace\begin{array}{l}
 		p^{n+1}(z) = \frac{(p^{n}(z) + \sigma \nabla \bar{s}^{n}(z))}{\max\left\lbrace1, ||(p^{n}(z) + \sigma \nabla \bar{s}^{n}(z))||_{2}\right\rbrace}, \forall z\in \mathcal{L}_{M}\\
-		q^{n+1}(x) = \frac{1}{1+\sigma*\lambda}\left[q^{n}(x) + \sigma T[\bar{s}^{n}](x) - \sigma\lambda r(x)\right],\; \forall x\in \mathcal{L}_F\\
+		q^{n+1}(x) = \frac{\lambda}{\lambda+\sigma}\left[q^{n}(x) + \sigma T[\bar{s}^{n}](x) + \sigma r(x)\right],\; \forall x\in \mathcal{L}_F\\
 		s^{n+1} = s^{n} - \tau \left[-div\;p^{n+1} + T^{*}[q^{n+1}]\right]\\
 		\bar{s}^{n+1} = s^{n+1}+\theta(s^{n+1} - s^{n})
 	\end{array}\right.
