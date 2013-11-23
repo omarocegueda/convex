@@ -406,7 +406,7 @@ void unwrapTotalVariation(double *dgdr, double *dgdc, int nrows, int ncols, doub
 	memset(yr, 0, sizeof(double)*nrows*ncols);
 	memset(yc, 0, sizeof(double)*nrows*ncols);
 	memcpy(xbar, x, sizeof(double)*nrows*ncols);
-	double errorPrev=1e10;
+	//double errorPrev=1e10;
 	while((tolerance<error) && (iter<=maxIter)){
 		++iter;
 		/*error=x[0]*x[0]*0.5;
@@ -545,7 +545,7 @@ void filterVectorField(double *gr, double *gc, int nrows, int ncols, double lamb
 	//---initialize intermediate iteration---
 	memcpy(frbar, fr, sizeof(double)*nrows*ncols);
 	memcpy(fcbar, fc, sizeof(double)*nrows*ncols);
-	double errorPrev=1e10;
+	//double errorPrev=1e10;
 	double tau_lambda=tau*lambda;
 	double tau_lambda2=tau_lambda*tau_lambda;
 	while((tolerance<error) && (iter<=maxIter)){
@@ -676,9 +676,8 @@ void filterVectorField_orientationInvariant(double *gr, double *gc, int nrows, i
 	//---initialize intermediate iteration---
 	memcpy(frbar, fr, sizeof(double)*nrows*ncols);
 	memcpy(fcbar, fc, sizeof(double)*nrows*ncols);
-	double errorPrev=1e10;
-	double tau_lambda=tau*lambda;
-	double tau_lambda2=tau_lambda*tau_lambda;
+	//double errorPrev=1e10;
+	//double tau_lambda=tau*lambda;
 	while(/*(tolerance<error) &&*/ (iter<=maxIter)){
 		++iter;
 		//---compute error---
@@ -829,7 +828,7 @@ void filterVectorField(double *gs, double *gr, double *gc, int nslices, int nrow
 	memcpy(fsbar, fs, sizeof(double)*nvox);
 	memcpy(frbar, fr, sizeof(double)*nvox);
 	memcpy(fcbar, fc, sizeof(double)*nvox);
-	double errorPrev=1e10;
+	//double errorPrev=1e10;
 	double tau_lambda=tau*lambda;
 	double tau_lambda2=tau_lambda*tau_lambda;
 	while((tolerance<error) && (iter<=maxIter)){
@@ -956,7 +955,7 @@ void filterMultiVectorField2D(double *gr, double *gc, int *assignmentV, int *ass
 	//---initialize intermediate iteration---
 	memcpy(frbar, fr, sizeof(double)*nrows*ncols*maxCompartments);
 	memcpy(fcbar, fc, sizeof(double)*nrows*ncols*maxCompartments);
-	double errorPrev=1e10;
+	//double errorPrev=1e10;
 	double tau_lambda=tau*lambda;
 	double tau_lambda2=tau_lambda*tau_lambda;
 	while((tolerance<error) && (iter<=maxIter)){

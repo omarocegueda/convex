@@ -738,6 +738,50 @@ We already solved the proximity operators:
 		\bar{s}^{n+1} = s^{n+1}+\theta(s^{n+1} - s^{n})
 	\end{array}\right.
 \end{equation}
+\section{Common optimization problems}
+\subsection{Linear programming}
+We are interested on solving the following optimization problem:
+\begin{equation}
+	\min_{x} c^{T}x \;s.t.\; Ax=b, x\geq0
+\end{equation}
+We can write this problem as
+\begin{equation}\label{eq:LP}
+	\min_{x} c^{T}x + \iota_{P}(x) + \iota_{\left\lbrace0\right\rbrace}(Ax-b)
+\end{equation}
+where $\iota_{\Omega}(x)$ is the indicator function over the convex set $\Omega$ (zero inside $\Omega$ and infinity outside), and $P=\left\lbrace x: x\geq0\right\rbrace$. Note that the convex conjugate of $\iota_{\left\lbrace 0\right\rbrace}(\cdot)$ is
+\begin{equation}
+	\iota_{\left\lbrace 0\right\rbrace}^{*}(\tilde{x}) = \sup_{x} <\tilde{x},x > -\iota_{\left\lbrace 0\right\rbrace}(x) = 0,
+\end{equation}
+then, by the definition of convex conjugate, eq. (\ref{eq:LP}) can be written as
+\begin{equation}\label{eq:LP}
+	\min_{x} <Ax, y> + c^{T}x + \iota_{P}(x) - <b,y>
+\end{equation}
+and the proximity operators of $G(x) = c^{T}x + \iota_{P}(x)$ and $F^{*}(y)=<b,y>$ can be computed as follows:
+\begin{equation}\label{eq:LP}
+	Prox_{\sigma G}(\tilde{x}) = \arg\min_{x} c^{T}x + \iota_{P}(x) + \frac{1}{2\sigma}||x-\tilde{x}||_{2}^{2}.
+\end{equation}
+But this is the sum of a set of decoupled functions that can be optimzed independently. The first order optimality condition for the $i-$th variable is:
+\begin{equation}
+	-\left(c_{i} + \frac{1}{\sigma}(x_{i}-\tilde{x}_{i})\right)\in \partial \iota_{[0,\infty]}(x_{i})
+\end{equation}
+The subdiferential of the indicator function over a convex set is zero in its interior, and at its boundary, it is the set of vectors pointing outwards the convex set, which, in our case, is simply:
+\begin{equation}
+	\partial \iota_{[0,\infty]}(x_{i}) = \left\lbrace
+	\begin{array}{ll}
+		0 & $ if $ x_i> 0\\
+		(-\infty, 0] & $ if $ x_{i}=0
+	\end{array}
+	\right.
+\end{equation}
+Therefore,
+\begin{equation}\label{eq:LP}
+	Prox_{\sigma G}(\tilde{x}) = x \Leftrightarrow x_{i} = \max\left\lbrace0, \tilde{x}_i - \sigma c_{i}\right\rbrace.
+\end{equation}
+The proximity operator for $F^{*}$ is
+\begin{equation}
+	Prox_{\tau F^{*}(\cdot)}(\tilde{y})=\arg\min_{y} <b,y> + \frac{1}{2\tau}||y-\tilde{y}||_{2}^{2} = \tilde{y} - \tau b
+\end{equation}
+And we are all set to apply the Chambolle's primal-dual alogorithm and its accelerations.
 \end{document}
 
 %%%%%%%%%%%%%Spherical Harmonics%%%%%%%%%%%%%%%%%%%

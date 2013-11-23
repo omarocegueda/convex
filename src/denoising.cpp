@@ -453,7 +453,7 @@ int averageVolumeDenoising(double *img, int r, int c, int s, double lambda, doub
 			cerr<<"!!!"<<endl;
 		}
 	}*/
-	int nvoxels=s*r*c;
+	//int nvoxels=s*r*c;
 	int currentPos=0;
 	for(int k=0;k<s;++k){
 		for(int i=0;i<r;++i){
@@ -499,7 +499,7 @@ int selectiveAverageVolumeDenoising(double *img, int r, int c, int s, double *de
 			cerr<<"!!!"<<endl;
 		}
 	}*/
-	int nvoxels=s*r*c;
+	//int nvoxels=s*r*c;
 	int currentPos=0;
 	int dropped=0;
 	int notDropped=0;
@@ -544,7 +544,7 @@ int medianVolumeDenoising(double *img, int r, int c, int s, double lambda, doubl
 	int dRow[]={  0, -1, 0, 1,     0, 0,    0, -1,  0,  1,  0, -1,  0,  1,    -1, -1,  1,  1, -1, -1,  1,  1, -1, -1,  1,  1};
 	int dCol[]={ -1,  0, 1, 0,     0, 0,   -1,  0,  1,  0, -1,  0,  1,  0,    -1,  1,  1, -1, -1,  1,  1, -1, -1,  1,  1, -1};
 	int dSlice[]={0,  0, 0, 0,    -1, 1,   -1, -1, -1, -1,  1,  1,  1,  1,     0,  0,  0,  0, -1, -1, -1, -1,  1,  1,  1,  1};
-	int nvoxels=s*r*c;
+	//int nvoxels=s*r*c;
 	double neighVals[NUM_NEIGHBORS+1];
 	int currentPos=0;
 	for(int k=0;k<s;++k){
