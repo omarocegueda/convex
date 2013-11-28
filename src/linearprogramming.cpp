@@ -83,7 +83,7 @@ double linprog_pd(double *c, double *A, int n, int m, double *b, double *x, int 
     double error=1+tolerance;
     memset(y, 0, sizeof(double)*n);
     double theta=1;
-    double L=estimateMatrixNorm(A, n, m, 1e-9);
+    double L=estimateMatrixNorm(A, n, m, 1e-9);//this estimation is not necessary for the diagonally preconditioned algorithm. Kept it here just as reference
     double *sigma=new double[n];
     double *tau=new double[m];
     for(int i=0;i<n;++i){
@@ -104,7 +104,9 @@ double linprog_pd(double *c, double *A, int n, int m, double *b, double *x, int 
             tau[j]=1.0/tau[j];
         }
     }
-
+    /*for(int j=0;j<m;++j){
+        x[j]=-c[j];
+    }*/
     int iter;
     for(iter=0;(iter<maxIter)&&(tolerance<error);++iter){
         //---iterate primal variable---

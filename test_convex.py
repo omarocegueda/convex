@@ -39,7 +39,7 @@ def test_tv_l2():
     plt.imshow(filtered, cmap=plt.cm.gray)
     plt.title("Output")
 
-def test_linprog():
+def test_linprog_sc50b():
     from numpy import genfromtxt
     Aname='data/sc50b/A.csv'
     Aeqname='data/sc50b/Aeq.csv'
@@ -63,7 +63,24 @@ def test_linprog():
     print 'Maximum equality violation:',np.abs(Aeq.dot(x)-beq).max()
     print 'Maximum inequality violation:',np.maximum(A.dot(x)-b,0).max()
     
+def test_linprog_densecolumns():
+    from numpy import genfromtxt
+    Aeqname='data/densecolumns/Aeq.csv'
+    beqname='data/densecolumns/beq.csv'
+    fname='data/densecolumns/f.csv'
+    lbname='data/densecolumns/lb.csv'
+    ubname='data/densecolumns/ub.csv'
+    Aeq=genfromtxt(Aeqname, delimiter=',')
+    beq=genfromtxt(beqname, delimiter=',')
+    c=genfromtxt(fname, delimiter=',')
+    lb=genfromtxt(lbname, delimiter=',')
+    ub=genfromtxt(ubname, delimiter=',')
+    x=np.array(convex.linprog_pd_small(c, Aeq, beq,20000,1e-11))
+    print 'Solution:',x
+    print 'Minimum objective:', c.dot(x)
+    print 'Maximum equality violation:',np.abs(Aeq.dot(x)-beq).max()
 
 if __name__=="__main__":
     #test_tv_l2()
-    test_linprog()
+    test_linprog_sc50b()
+    #test_linprog_densecolumns()
