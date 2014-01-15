@@ -754,7 +754,7 @@ where $\iota_{\Omega}(x)$ is the indicator function over the convex set $\Omega$
 \end{equation}
 then, by the definition of convex conjugate, eq. (\ref{eq:LP}) can be written as
 \begin{equation}\label{eq:LP}
-	\min_{x} <Ax, y> + c^{T}x + \iota_{P}(x) - <b,y>
+	\min_{x} \max_{y} <Ax, y> + c^{T}x + \iota_{P}(x) - <b,y>
 \end{equation}
 and the proximity operators of $G(x) = c^{T}x + \iota_{P}(x)$ and $F^{*}(y)=<b,y>$ can be computed as follows:
 \begin{equation}\label{eq:LP}

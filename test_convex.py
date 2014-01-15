@@ -75,12 +75,21 @@ def test_linprog_densecolumns():
     c=genfromtxt(fname, delimiter=',')
     lb=genfromtxt(lbname, delimiter=',')
     ub=genfromtxt(ubname, delimiter=',')
-    x=np.array(convex.linprog_pd_small(c, Aeq, beq,20000,1e-11))
+    maxIter=200000
+#    x=np.array(convex.linprog_pd_small(c, Aeq, beq,maxIter,1e-11))
+#    print 'Dense:'
+#    print 'Solution:',x
+#    print 'Minimum objective:', c.dot(x)
+#    print 'Maximum equality violation:',np.abs(Aeq.dot(x)-beq).max()
+    n=Aeq.shape[0]
+    m=Aeq.shape[1]
+    x=np.array(convex.linprog_pd_large(fname, Aeqname, beqname,n, m, maxIter,1e-11))
+    print 'Sparse:'
     print 'Solution:',x
     print 'Minimum objective:', c.dot(x)
     print 'Maximum equality violation:',np.abs(Aeq.dot(x)-beq).max()
 
 if __name__=="__main__":
     #test_tv_l2()
-    test_linprog_sc50b()
-    #test_linprog_densecolumns()
+    #test_linprog_sc50b()
+    test_linprog_densecolumns()
